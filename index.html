@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Emergency Location Request (PoC)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
+      background: #f8f8f8;
+    }
+    button {
+      background: red;
+      color: white;
+      font-size: 18px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🚨 Emergency Location Request</h2>
+<p><b>Demo:</b> Share your location for emergency response</p>
+
+<button onclick="getLocation()">Share My Location</button>
+
+<p id="status"></p>
+
+<script>
+function getLocation() {
+  const status = document.getElementById("status");
+  status.innerText = "Getting precise location...";
+
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const acc = position.coords.accuracy;
+      const time = new Date().toLocaleString();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const reqId = urlParams.get('req') || "NO_ID";
+
+      const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+      const message = 
+`EMERGENCY LOCATION
+REQID: ${reqId}
+Lat: ${lat}
+Lon: ${lon}
+Accuracy: ${acc}m
+Time: ${time}
+Map: ${mapsLink}`;
+
+      // Show preview on screen
+      status.innerText =
+        `Lat: ${lat}, Lon: ${lon} (±${acc}m)\nTime: ${time}`;
+
+      // Confirm before sending
+      if (confirm("Do you want to share your location via SMS?")) {
+        window.location.href =
+          `sms:+918076529930?body=${encodeURIComponent(message)}`;
+      }
+    },
+    function(error) {
+      let msg = "";
+
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          msg = "Permission denied. Please allow location access.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          msg = "Location unavailable. Try again.";
+          break;
+        case error.TIMEOUT:
+          msg = "Request timed out. Retrying may help.";
+          break;
+        default:
+          msg = "Unknown error occurred.";
+      }
+
+      document.getElementById("status").innerText = msg;
+
+      // Add retry button
+      const retryBtn = document.createElement("button");
+      retryBtn.innerText = "Retry";
+      retryBtn.onclick = getLocation;
+      document.body.appendChild(retryBtn);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+}
+</script>
+
+</body>
+</html>
