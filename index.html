@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Emergency Location Request (PoC)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
+      background: #f8f8f8;
+    }
+    button {
+      background: red;
+      color: white;
+      font-size: 18px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+      word-break: break-word;
+      white-space: pre-line;
+      text-align: left;
+      display: inline-block;
+      max-width: 90%;
+    }
+    #status img {
+      vertical-align: middle;
+      width: 20px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🚨 Emergency Location Request</h2>
+<p><b>Demo:</b> Share your location for emergency response</p>
+
+<button onclick="getLocation()">Share My Location</button>
+
+<p id="status"></p>
+
+<script>
+function getDeviceType() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  if (/android/i.test(ua)) return "android";
+  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return "ios";
+  return "other";
+}
+
+function handleLocationError(error) {
+  const status = document.getElementById("status");
+  const deviceType = getDeviceType();
+  let msg = "";
+
+  if (error.code === error.PERMISSION_DENIED) {
+    msg = `❌ Location permission denied.
+
+👉 Fix:
+1. Tap the lock icon in browser address bar
+2. Go to Permissions
+3. Allow Location access
+4. Reload the page`;
+  } 
+  else if (error.code === error.POSITION_UNAVAILABLE) {
+    msg = `⚠️ Location is turned OFF.
+
+👉 Enable GPS:\n`;
+    if (deviceType === "android") {
+      msg += `Android:
+1. Swipe down from the top to open Notification Drawer
+2. Tap the <img src="location-icon.png" alt="Location Icon"> icon to turn it ON
+3. Return to this page and tap Retry`;
+    } else if (deviceType === "ios") {
+      msg += `iPhone:
+1. Open Settings → Privacy & Security → Location Services
+2. Turn ON Location Services
+3. Return to this page and tap Retry`;
+    } else {
+      msg += `Please enable location services on your device and tap Retry`;
+    }
+  } 
+  else if (error.code === error.TIMEOUT) {
+    msg = `⏳ Location request timed out.
+
+👉 Try this:
+1. Turn ON GPS
+2. Go outdoors or near a window
+3. Tap Retry`;
+  } 
+  else {
+    msg = "Unknown error occurred. Please try again.";
+  }
+
+  status.innerHTML = msg;
+
+  if (!document.getElementById("retryBtn")) {
+    const retryBtn = document.createElement("button");
+    retryBtn.innerText = "Retry";
+    retryBtn.id = "retryBtn";
+    retryBtn.onclick = getLocation;
+    document.body.appendChild(retryBtn);
+  }
+}
+
+function getLocation() {
+  const status = document.getElementById("status");
+  status.innerText = "Getting precise location...";
+
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const acc = position.coords.accuracy;
+      const time = new Date().toLocaleString();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const reqId = urlParams.get('req') || "NO_ID";
+
+      const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+      const message = 
+`EMERGENCY LOCATION
+REQID: ${reqId}
+Lat: ${lat}
+Lon: ${lon}
+Accuracy: ${acc}m
+Time: ${time}
+Map: ${mapsLink}`;
+
+      // Show preview on screen
+      status.innerText =
+        `Lat: ${lat}, Lon: ${lon} (±${acc}m)\nTime: ${time}`;
+
+      // Confirm before sending
+      if (confirm("Do you want to share your location via SMS?")) {
+        window.location.href =
+          `sms:+918076529930?body=${encodeURIComponent(message)}`;
+      }
+    },
+    handleLocationError,
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+}
+</script>
+
+</body>
+</html>
