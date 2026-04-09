@@ -30,6 +30,11 @@
       display: inline-block;
       max-width: 90%;
     }
+    #status img {
+      vertical-align: middle;
+      width: 20px;
+      height: 20px;
+    }
   </style>
 </head>
 <body>
@@ -46,9 +51,9 @@ function getLocation() {
   const status = document.getElementById("status");
   status.innerText = "Getting precise location...";
 
-  // Show warning if location takes too long
+  // Timeout warning if GPS is slow
   const loadingTimeout = setTimeout(() => {
-    status.innerText = "⏳ Still getting location…\nMove near a window or enable GPS and tap Retry.";
+    status.innerText = "⏳ Still getting location…\nPlease enable GPS and tap Retry.";
   }, 12000);
 
   navigator.geolocation.getCurrentPosition(
@@ -76,14 +81,20 @@ Time: ${time}`;
 `Lat: ${lat}, Lon: ${lon} (±${acc}m)
 Time: ${time}`;
 
-      // Ask to send SMS
-      if (confirm("Do you want to share your location via SMS?")) {
-        window.location.href = `sms:+918076529930?body=${encodeURIComponent(message)}`;
-      }
+      // Directly open SMS app (no confirm prompt)
+      window.location.href = `sms:+918076529930?body=${encodeURIComponent(message)}`;
     },
     function(error) {
       clearTimeout(loadingTimeout);
-      status.innerText = "❌ Location failed. Please enable GPS and tap Retry.";
+
+      const icon = "⚠️"; // Replace with <img src="location-icon.png"> if desired
+      status.innerHTML =
+`${icon} Location failed. GPS seems OFF.
+
+👉 Enable GPS:
+1. Swipe down from top (Notification Drawer)
+2. Tap the Location icon
+3. Return here and tap Retry`;
 
       if (!document.getElementById("retryBtn")) {
         const retryBtn = document.createElement("button");
